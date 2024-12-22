@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Annotation</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        #annotationCanvas {
+            border: 1px solid black;
+            cursor: crosshair;
+        }
+
+        #labelInput {
+            margin: 10px 0;
+            padding: 5px;
+            width: 200px;
+        }
+
+        .container {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Image Annotation Task</h1>
+    <div class="container">
+        <img id="image" src="{{ image_url }}" alt="Annotation Task" />
+        <p>Draw a bounding box by clicking and dragging over the image.</p>
+
+        <!-- Annotation Label Input -->
+        <input type="text" id="labelInput" placeholder="Enter label (e.g., Headlight, Wheel)">
+
+        <!-- Canvas for Drawing Annotations -->
+        <canvas id="annotationCanvas"></canvas>
+
+        <!-- Form to Submit Annotations -->
+        <form action="{{ url_for('save_annotation') }}" method="POST" onsubmit="saveAnnotations()">
+            <input type="hidden" name="task_id" value="{{ task_id }}">
+            <input type="hidden" name="annotations" id="annotations_input">
+            <button type="submit">Submit Annotations</button>
+        </form>
+    </div>
+
+    <script>
+        const canvas = document.getElementById("annotationCanvas");
+        const img = document.getElementById("image");
+        const ctx = canvas.getContext("2d");
+        let annotations = [];
+        let isDrawing = false;
+        let startX, startY, endX, endY;
+
+        img.onload = () => {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        };
+
+        // Mouse events for bounding box
+        canvas.addEventListener("mousedown", (e) => {
+            const rect = canvas.getBoundingClientRect();
+            startX = e.clientX - rect.left;
+            startY = e.clientY - rect.top;
+            isDrawing = true;
+        });
+
+        canvas.addEventListener("mousemove", (e) => {
+            if (!isDrawing) return;
+            const rect = canvas.getBoundingClientRect();
+            endX = e.clientX - rect.left;
+            endY = e.clientY - rect.top;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = "red";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(startX, startY, endX - startX, endY - startY);
+        });
+
+        canvas.addEventListener("mouseup", () => {
+            if (!isDrawing) return;
+            isDrawing = false;
+
+            const label = document.getElementById("labelInput").value.trim();
+            if (!label) {
+                alert("Please enter a label for this annotation.");
+                return;
+            }
+
+            annotations.push({
+                label: label,
+                x: startX,
+                y: startY,
+                width: endX - startX,
+                height: endY - startY
+            });
+
+            // Draw final rectangle
+            ctx.strokeStyle = "green";
+            ctx.strokeRect(startX, startY, endX - startX, endY - startY);
+
+            document.getElementById("labelInput").value = ""; // Clear label input
+        });
+
+        function saveAnnotations() {
+            document.getElementById("annotations_input").value = JSON.stringify(annotations);
+        }
+    </script>
+</body>
+</html>
