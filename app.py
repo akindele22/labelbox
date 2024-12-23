@@ -4,7 +4,6 @@ from bson import ObjectId
 import datetime
 
 app = Flask(__name__)
-Server = app.server
 
 # MongoDB Setup
 client = MongoClient("mongodb+srv://Bash-Anno1:1234567890@cluster-1.zcyy0.mongodb.net/?retryWrites=true&w=majority&appName=Cluster-1")
